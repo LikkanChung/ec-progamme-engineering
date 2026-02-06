@@ -1,27 +1,66 @@
 # Copilot Instructions
 
-When working on this project:
+## Project Overview
+URL shortening service with Express.js backend, React frontend, and PostgreSQL database.
 
-1. **Always check .github/prompts/initial-build.prompt.md files first** - It contains the source of truth for project requirements
-2. **Follow the defined architecture** - Use the tech stack and structure specified in .github/prompts/initial-build.prompt.md
-3. **Implement incrementally** - Focus on one feature or component at a time
-4. **Write clean, documented code** - Include comments and documentation
-5. **Ask clarifying questions** - If requirements are ambiguous, ask before implementing
-6. **Update documentation** - Keep README.md in sync with implementation
-7. **Describe changes made** - When changing code, explain what was changed and why in the Copilort chat. Explain what anti-pattenrs you are avoiding and what best practices or design patterns you are following, as well as any trade-offs you are making. Do the same with any code smells you are fixing.
+## Source of Truth
+**Always check [.github/prompts/initial-build.prompt.md](prompts/initial-build.prompt.md) first** - Contains project requirements, architecture, and implementation steps.
 
-## Code Standards
+## Architecture
 
-- Follow language-specific best practices
-- Use meaningful variable and function names
-- Write modular, reusable code
-- Include error handling
-- Add tests for critical functionality
+### Tech Stack
+- **Backend**: Node.js + Express.js + TypeScript (port 3000)
+- **Frontend**: React + Vite + TypeScript (port 5173)
+- **Database**: PostgreSQL with raw SQL (no ORM)
+- **Testing**: Jest
+- **Dev Environment**: Docker Compose
 
-## Project Context
+### Project Structure
+```
+backend/src/
+  routes/      # Express route handlers
+  services/    # Business logic layer
+  db/          # Database connection and queries
+  utils/       # Short code generator, helpers
+frontend/src/
+  components/  # React components
+  services/    # API client
+docs/          # Documentation (setup, API, architecture)
+```
 
-Reference .github/prompts/initial-build.prompt.md for:
-- Overall project goals
-- Technical requirements
-- Architecture decisions
-- Implementation priorities
+### API Endpoints
+- `POST /api/urls` - Create shortened URL
+- `GET /api/urls` - List all URLs
+- `DELETE /api/urls/:id` - Delete URL
+- `GET /:shortCode` - Redirect to long URL
+
+## Code Patterns
+
+### Database Queries
+Use raw SQL with parameterized queries in `backend/src/db/`:
+```typescript
+const result = await pool.query('SELECT * FROM urls WHERE short_code = $1', [shortCode]);
+```
+
+### Short Code Generation
+5-character alphanumeric codes, check uniqueness before insert. Max long URL: 256 chars.
+
+### Error Handling
+Use standard HTTP status codes (201 created, 404 not found, 500 server error).
+
+## Development Commands
+```bash
+docker-compose up        # Start PostgreSQL + app
+npm run dev              # Run backend/frontend in dev mode
+npm test                 # Run Jest unit tests
+```
+
+## Key Constraints
+- No authentication required
+- No analytics or URL expiry
+- No URL validation or duplicate checking
+- CORS configured for frontend-backend communication
+- Unique constraint on `short_code` column
+
+## When Making Changes
+Explain what was changed and why. Describe anti-patterns avoided, design patterns followed, and any trade-offs made. Treat the person reading the code as a junior developer who needs to understand the rationale behind decisions.
