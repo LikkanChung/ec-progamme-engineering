@@ -18,6 +18,7 @@ function App() {
       setError(null);
     } catch (err) {
       setError('Failed to load URLs. Make sure the backend is running.');
+      console.error('Error loading URLs:', err);
     } finally {
       setLoading(false);
     }

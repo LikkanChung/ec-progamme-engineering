@@ -73,6 +73,34 @@ cd backend
 npm test
 ```
 
+## Linting
+
+Both the backend and frontend use ESLint for code quality.
+
+### Run Linting
+
+```bash
+# Backend
+cd backend
+npm run lint        # Check for issues
+npm run lint:fix    # Auto-fix issues
+
+# Frontend
+cd frontend
+npm run lint        # Check for issues
+npm run lint:fix    # Auto-fix issues
+```
+
+### Generate Lint Reports
+
+To generate HTML lint reports and open them in your browser:
+
+```bash
+./lint-report.sh
+```
+
+This script runs ESLint on both projects and opens the generated reports (`backend/eslint-report.html` and `frontend/eslint-report.html`) in your default browser.
+
 ## Documentation
 
 - [Setup Instructions](docs/setup.md)

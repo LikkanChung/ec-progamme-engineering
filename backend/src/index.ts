@@ -21,8 +21,6 @@ app.use('/api/urls', urlRoutes);
 app.use('/', redirectRoutes);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT);
 
 export default app;
