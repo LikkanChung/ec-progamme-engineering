@@ -1,0 +1,1 @@
+export { generateShortCode } from './shortCode';
