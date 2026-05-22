@@ -31,3 +31,6 @@ temp/
 
 # ESLint Reports
 eslint-report.html
+
+# Coverage reports
+coverage/

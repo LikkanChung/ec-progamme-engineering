@@ -37,6 +37,12 @@ docker-compose up
 
 ### Run Locally
 
+Quick setup (installs backend/frontend dependencies only):
+
+```bash
+./setup-local.sh
+```
+
 1. Start the database:
    ```bash
    docker-compose up postgres
@@ -69,8 +75,31 @@ docker-compose up
 ## Running Tests
 
 ```bash
+# Backend unit tests
 cd backend
 npm test
+
+# Frontend component tests
+cd ../frontend
+npm test
+```
+
+## Coverage Checks
+
+Run both coverage checks from the project root:
+
+```bash
+./coverage-check.sh
+```
+
+```bash
+# Backend coverage with thresholds (Jest)
+cd backend
+npm run test:coverage
+
+# Frontend component coverage with thresholds (Vitest)
+cd ../frontend
+npm run test:coverage
 ```
 
 ## Linting
