@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { UrlForm } from './UrlForm';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UrlForm } from '../components/UrlForm';
 import { createUrl } from '../services';
 
 vi.mock('../services', () => ({

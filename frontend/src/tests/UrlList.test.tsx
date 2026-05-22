@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UrlList } from './UrlList';
+import { UrlList } from '../components/UrlList';
 import { deleteUrl } from '../services';
 
 vi.mock('../services', () => ({
