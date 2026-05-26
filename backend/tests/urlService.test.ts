@@ -1,13 +1,18 @@
 import * as urlService from '../src/services/urlService';
-import * as db from '../src/db/queries';
 import * as utils from '../src/utils/shortCode';
+import pool from '../src/db/pool';
 
 // Mock the database module
-jest.mock('../src/db/queries');
 jest.mock('../src/utils/shortCode');
+jest.mock('../src/db/pool', () => ({
+  __esModule: true,
+  default: {
+    query: jest.fn(),
+  },
+}));
 
-const mockDb = db as jest.Mocked<typeof db>;
 const mockUtils = utils as jest.Mocked<typeof utils>;
+const mockPool = pool as unknown as { query: jest.Mock };
 
 describe('urlService', () => {
   beforeEach(() => {
@@ -24,14 +29,19 @@ describe('urlService', () => {
       };
 
       mockUtils.generateShortCode.mockReturnValue('abc12');
-      mockDb.shortCodeExists.mockResolvedValue(false);
-      mockDb.createUrl.mockResolvedValue(mockUrl);
+      mockPool.query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [mockUrl] });
 
       const result = await urlService.createShortenedUrl('https://example.com');
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockUrl);
-      expect(mockDb.createUrl).toHaveBeenCalledWith('abc12', 'https://example.com');
+      expect(mockPool.query).toHaveBeenCalledWith('SELECT 1 FROM urls WHERE short_code = $1', ['abc12']);
+      expect(mockPool.query).toHaveBeenCalledWith(
+        'INSERT INTO urls (short_code, long_url) VALUES ($1, $2) RETURNING *',
+        ['abc12', 'https://example.com']
+      );
     });
 
     it('should return error when URL is empty', async () => {
@@ -60,10 +70,10 @@ describe('urlService', () => {
       mockUtils.generateShortCode
         .mockReturnValueOnce('abc12')
         .mockReturnValueOnce('xyz99');
-      mockDb.shortCodeExists
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
-      mockDb.createUrl.mockResolvedValue(mockUrl);
+      mockPool.query
+        .mockResolvedValueOnce({ rows: [{ '?column?': 1 }] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [mockUrl] });
 
       const result = await urlService.createShortenedUrl('https://example.com');
 
@@ -79,16 +89,17 @@ describe('urlService', () => {
         { id: 2, short_code: 'def34', long_url: 'https://test.com', created_at: new Date() },
       ];
 
-      mockDb.getAllUrls.mockResolvedValue(mockUrls);
+      mockPool.query.mockResolvedValue({ rows: mockUrls });
 
       const result = await urlService.listAllUrls();
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockUrls);
+      expect(mockPool.query).toHaveBeenCalledWith('SELECT id, short_code, long_url, created_at FROM urls ORDER BY created_at DESC');
     });
 
     it('should handle database errors', async () => {
-      mockDb.getAllUrls.mockRejectedValue(new Error('Database error'));
+      mockPool.query.mockRejectedValue(new Error('Database error'));
 
       const result = await urlService.listAllUrls();
 
@@ -99,16 +110,16 @@ describe('urlService', () => {
 
   describe('deleteShortenedUrl', () => {
     it('should delete URL successfully', async () => {
-      mockDb.deleteUrl.mockResolvedValue(true);
+      mockPool.query.mockResolvedValue({ rowCount: 1 });
 
       const result = await urlService.deleteShortenedUrl(1);
 
       expect(result.success).toBe(true);
-      expect(mockDb.deleteUrl).toHaveBeenCalledWith(1);
+      expect(mockPool.query).toHaveBeenCalledWith('DELETE FROM urls WHERE id = $1', [1]);
     });
 
     it('should return error when URL not found', async () => {
-      mockDb.deleteUrl.mockResolvedValue(false);
+      mockPool.query.mockResolvedValue({ rowCount: 0 });
 
       const result = await urlService.deleteShortenedUrl(999);
 
@@ -126,16 +137,20 @@ describe('urlService', () => {
         created_at: new Date(),
       };
 
-      mockDb.getUrlByShortCode.mockResolvedValue(mockUrl);
+      mockPool.query.mockResolvedValue({ rows: [mockUrl] });
 
       const result = await urlService.getLongUrl('abc12');
 
       expect(result.success).toBe(true);
       expect(result.longUrl).toBe('https://example.com');
+      expect(mockPool.query).toHaveBeenCalledWith(
+        'SELECT id, short_code, long_url, created_at FROM urls WHERE short_code = $1',
+        ['abc12']
+      );
     });
 
     it('should return error for non-existent short code', async () => {
-      mockDb.getUrlByShortCode.mockResolvedValue(null);
+      mockPool.query.mockResolvedValue({ rows: [] });
 
       const result = await urlService.getLongUrl('zzzzz');
 

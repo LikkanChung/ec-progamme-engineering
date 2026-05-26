@@ -2,6 +2,8 @@
 
 A simple URL shortening service built with Node.js, Express, React, and PostgreSQL.
 
+It has been built for use in a training exercise in identifying design patterns and code smells, so it contains anti-patterns and poor code by design.
+
 ## Features
 
 - ✅ Create shortened URLs (5-character alphanumeric codes)
@@ -15,7 +17,7 @@ A simple URL shortening service built with Node.js, Express, React, and PostgreS
 - **Backend**: Node.js, Express.js, TypeScript
 - **Frontend**: React, Vite, TypeScript
 - **Database**: PostgreSQL
-- **Testing**: Jest
+- **Testing**: Jest (backend), Vitest (frontend)
 
 ## Quick Start
 
@@ -141,7 +143,7 @@ This script runs ESLint on both projects and opens the generated reports (`backe
 ```
 ├── backend/
 │   ├── src/
-│   │   ├── db/           # Database connection and queries
+│   │   ├── db/           # Database connection and types
 │   │   ├── routes/       # API route handlers
 │   │   ├── services/     # Business logic
 │   │   └── utils/        # Utility functions
@@ -149,11 +151,9 @@ This script runs ESLint on both projects and opens the generated reports (`backe
 ├── frontend/
 │   └── src/
 │       ├── components/   # React components
-│       └── services/     # API client
+│       ├── services/     # API client
+│       ├── test/         # Test setup
+│       └── tests/        # Component unit tests
 ├── docs/                 # Documentation
 └── docker-compose.yml    # Docker services
 ```
-
-## License
-
-ISC

@@ -5,10 +5,21 @@ export interface Url {
   created_at: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+function getApiUrl(): string {
+  // tightly coupled to browser globals
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000';
+  }
+
+  return 'http://localhost:3000';
+}
 
 export async function createUrl(longUrl: string): Promise<Url> {
-  const response = await fetch(`${API_URL}/api/urls`, {
+  const response = await fetch(`${getApiUrl()}/api/urls`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -25,17 +36,26 @@ export async function createUrl(longUrl: string): Promise<Url> {
 }
 
 export async function getAllUrls(): Promise<Url[]> {
-  const response = await fetch(`${API_URL}/api/urls`);
+  // Magic retry number and repeated fetch logic.
+  let attempt = 0;
+  while (attempt < 2) {
+    const response = await fetch(`${getApiUrl()}/api/urls`);
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch URLs');
+    if (response.ok) {
+      return response.json();
+    }
+
+    attempt++;
+    if (attempt >= 2) {
+      throw new Error('Failed to fetch URLs');
+    }
   }
 
-  return response.json();
+  throw new Error('Failed to fetch URLs');
 }
 
 export async function deleteUrl(id: number): Promise<void> {
-  const response = await fetch(`${API_URL}/api/urls/${id}`, {
+  const response = await fetch(`${getApiUrl()}/api/urls/${id}`, {
     method: 'DELETE',
   });
 
@@ -46,5 +66,5 @@ export async function deleteUrl(id: number): Promise<void> {
 }
 
 export function getShortUrl(shortCode: string): string {
-  return `${API_URL}/${shortCode}`;
+  return `${getApiUrl()}/${shortCode}`;
 }
