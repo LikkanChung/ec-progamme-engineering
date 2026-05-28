@@ -1,7 +1,7 @@
 ---
 name: refactor-code-smell
-description: "Use when: identifying or fixing a code smell, anti-pattern, or readability problem. Use for: long functions, duplicate logic, magic numbers, magic strings, deep nesting, poor or misleading variable or function names, functions that do too many things, dead code, boolean trap parameters, excessive comments that explain what instead of why, primitive obsession, god objects or god functions, silent catch blocks, or any time a developer asks to refactor, clean up, improve, simplify, or review code quality."
-argument-hint: "<file path or function name — e.g. src/app/booking.ts, or describe the smell you want to fix>"
+description: "Use when: identifying or fixing a code smell, anti-pattern, or readability problem. Use for: long functions, duplicate logic, magic numbers, magic strings, deep nesting, poor or misleading variable or function names, functions that do too many things, dead code, boolean trap parameters, excessive comments that explain what instead of why, primitive obsession, god objects or god functions, silent catch blocks, or any time a developer asks to refactor, clean up, improve, simplify, or review code quality. Also use when given a code-smell-report.md to work through all findings one at a time with sign-off gates."
+argument-hint: "<file path or function name — e.g. src/app/booking.ts> OR <path to code-smell-report.md to work through all findings>"
 ---
 
 # Refactor Code Smell Skill
@@ -28,49 +28,125 @@ This skill enforces a strict workflow: **name it → test baseline → fix → v
 
 - The change would alter external behaviour, not just structure — that is a feature change, not a refactor
 - There are no tests for the code being changed (write tests first, then invoke this skill)
-- The scope is large (multiple files, multiple smells) — break it into separate invocations, one smell at a time
+- The scope is large (multiple files, multiple smells) — use report-driven mode instead of manually chaining invocations
 
 ---
 
-## Smell Catalogue
+## Modes of Operation
 
-Use this as your reference when analysing code. Always name the smell before proposing a fix.
-
-| Smell | What it looks like | Standard fix |
+| Mode | When to use | Argument |
 |---|---|---|
-| **Long Method** | Function > ~20 lines, does multiple things | Extract smaller, single-purpose functions |
-| **Magic Number** | Raw numeric literal with no explanation (`60`, `404`, `86400`) | Extract to a named constant |
-| **Magic String** | Raw string literal used as a value (`"PENDING"`, `"admin"`) | Extract to a typed enum or const |
-| **Duplicate Code** | Same or near-identical logic in two or more places | Extract to a shared function |
-| **Dead Code** | Unreachable branches, unused variables, commented-out blocks | Delete it — that's what git history is for |
-| **Long Parameter List** | Function takes 4+ arguments | Group related params into an object/interface |
-| **Boolean Trap** | `doThing(true, false)` — booleans as positional params | Replace with an options object or two named functions |
-| **Deep Nesting** | 3+ levels of if/else or callbacks | Invert conditions (early return), or extract functions |
-| **Misleading Name** | Name says one thing, code does another | Rename to match actual behaviour |
-| **Poor Name** | `data`, `val`, `temp`, `stuff`, `handleIt` | Rename to describe the domain concept |
-| **Comments That Explain What** | Comment restates what the code does literally | Remove the comment, rename the code to be self-explanatory |
-| **God Function** | One function that orchestrates everything | Split into focused, composable steps |
-| **Primitive Obsession** | Passing raw strings/numbers where a typed object or enum belongs | Introduce a domain type |
-| **Feature Envy** | Function uses more of another module's data than its own | Move the function closer to the data it uses |
+| **Single-smell** | You know the specific file or function to fix | File path or function name |
+| **Report-driven** | You have a `code-smell-report.md` from `find-code-smell` | Path to the report file |
+
+If the argument ends in `.md` or contains `code-smell-report`, use **Report-driven mode**. Otherwise use **Single-smell mode**.
 
 ---
 
-## Anti-Pattern Catalogue
+## Catalogue Reference
 
-Anti-patterns are structural problems larger than a single smell. Name and explain before touching.
+All smell and anti-pattern definitions, signs, and standard fixes are in:
+[code-smell-catalogue.md](../references/code-smell-catalogue.md)
 
-| Anti-Pattern | Signs | Fix |
-|---|---|---|
-| **Silent Catch** | `catch (e) {}` or `catch (e) { return null }` with no logging | Log the error, or rethrow — never swallow silently |
-| **Any Escape Hatch** | `as any`, `as unknown as X` used to bypass types | Resolve the real type; only use `as` with a written justification comment |
-| **Callback Hell** | Functions nested 3+ levels deep inside callbacks | Refactor to `async/await` with named steps |
-| **Mutable Shared State** | Module-level `let` mutated by multiple functions | Encapsulate behind a function or class |
-| **Shotgun Surgery** | One conceptual change requires edits across many unrelated files | Extract the shared concept into a single module |
-| **Inappropriate Intimacy** | Module A reaches deep into the internals of module B | Expose a clear interface, hide internals |
+Load this before analysing. Always use the exact catalogue term when naming a smell.
 
 ---
 
-## Workflow
+## Report-Driven Workflow
+
+Use this workflow when the argument is a `code-smell-report.md`.
+
+### Step R1 — Load the report and initialise the task list
+
+Read the report file. Find the `## Task List` section.
+
+If no Task List section exists, add one immediately after the `## Summary` section using this format, with one row per finding ordered by severity:
+
+```markdown
+## Task List
+
+| # | Smell | File | Location | Status |
+|---|---|---|---|---|
+| 1 | Silent Catch | path/to/file.ts | catchBlock() | not-started |
+| 2 | God Function | path/to/file.ts | processData() | not-started |
+```
+
+Status values:
+- `not-started` — not yet addressed
+- `in-progress` — fix applied, awaiting user sign-off
+- `signed-off` — user has approved the fix
+- `blocked` — tests were already failing before the fix; skipped
+
+Present the full task list to the user in chat before proceeding.
+
+### Step R2 — Pick the next finding
+
+Take the first row with status `not-started`. Update its status to `in-progress` in the report file.
+
+Announce in chat:
+> **Now fixing [#N]: [Smell Name]** in `[file]` — `[location]`
+
+### Step R3 — Establish a green baseline
+
+Run tests for the affected file:
+
+```bash
+npm test -- --testPathPattern=<filename>
+```
+
+If tests fail: update the row status to `blocked`, explain why in chat, and proceed to Step R2 with the next finding. Do not attempt the fix.
+
+### Step R4 — Fix the smell
+
+Apply the fix following all rules in the **Conventions** section. One smell only.
+
+### Step R5 — Verify
+
+Run the tests again. If any test fails:
+1. Revert the change
+2. Update the row status back to `not-started`
+3. Explain what went wrong
+4. Ask the developer how to proceed before continuing
+
+### Step R6 — Present and request sign-off
+
+Post a summary in chat using this format:
+
+```
+## Fix [#N]: [Smell Name]
+
+**File:** `path/to/file.ts`
+**Location:** `functionName()`
+**What changed:** [one sentence — what was extracted, renamed, or deleted]
+**Behaviour unchanged:** yes
+**Tests:** all passing
+
+Please review this fix. Reply **approved** to sign it off, or describe any concerns.
+```
+
+Do not proceed to the next finding until the user replies.
+
+### Step R7 — Handle the response
+
+- If the user replies **approved** (or equivalent): update the row status to `signed-off` in the report file, then return to Step R2.
+- If the user raises a concern: address it, re-run tests, then re-present for sign-off. Do not mark `signed-off` until explicitly approved.
+
+### Step R8 — Completion
+
+When all rows are `signed-off` or `blocked`, update the report file's top-level metadata:
+
+```markdown
+**Status:** complete
+```
+
+Post in chat:
+> All findings have been processed. Report updated at `[path to report]`.
+
+---
+
+## Single-Smell Workflow
+
+Use this workflow when the argument is a file path or function name.
 
 Follow these steps in order. Do not skip any step.
 

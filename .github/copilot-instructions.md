@@ -64,3 +64,26 @@ npm test                 # Run Jest unit tests
 
 ## When Making Changes
 Explain what was changed and why. Describe anti-patterns avoided, design patterns followed, and any trade-offs made. Treat the person reading the code as a junior developer who needs to understand the rationale behind decisions.
+
+## Code Quality Workflow
+
+When a developer asks to **fix all code smells**, **clean up the codebase**, **do a code quality pass**, or anything equivalent, always run the two-skill pipeline in this exact order — do not skip straight to fixing:
+
+### Step 1 — Scan (find-code-smell)
+Invoke the `find-code-smell` skill with no argument to scan the entire repository:
+```
+find-code-smell
+```
+This produces `docs/code-smell-report.md` containing a prioritised findings list and a Task List with every smell at `not-started`.
+
+### Step 2 — Fix (refactor-code-smell)
+Once the report file exists, immediately invoke the `refactor-code-smell` skill with the report as its argument:
+```
+refactor-code-smell docs/code-smell-report.md
+```
+This enters report-driven mode: it works through the Task List one finding at a time, running tests before and after each fix, and pausing for developer sign-off before moving to the next item.
+
+### Rules
+- Never skip Step 1 and jump straight to fixing — the report is the shared source of truth for what needs doing and what has been approved.
+- Never fix more than one smell per turn — each fix must be signed off individually.
+- The report file is the audit trail; do not delete it after the session.
